@@ -4,7 +4,7 @@ from kirin import ir, rewrite
 from kirin.dialects.py import Constant
 from kirin.ir.nodes.stmt import Statement
 from kirin.passes import Fold, Pass
-from kirin.passes.callgraph import CallGraphPass
+from bloqade.rewrite.passes.callgraph import CallGraphPass
 from kirin.rewrite.abc import RewriteResult, RewriteRule
 
 from bloqade.shuttle.arch import ArchSpec

@@ -44,13 +44,11 @@ def move_by_waypoints(
         drop (bool): Whether to drop the tweezer at the last waypoint. Defaults to True.
 
     """
-    if len(waypoints) < 1:
-        return
-
-    shape = grid.shape(waypoints[0])
-    device_kernel = schedule.device_fn(
-        move_by_waypoints_kernel,
-        ilist.range(shape[0]),
-        ilist.range(shape[1]),
-    )
-    device_kernel(waypoints, pick, drop)
+    if len(waypoints) >= 1:
+        shape = grid.shape(waypoints[0])
+        device_kernel = schedule.device_fn(
+            move_by_waypoints_kernel,
+            ilist.range(shape[0]),
+            ilist.range(shape[1]),
+        )
+        device_kernel(waypoints, pick, drop)

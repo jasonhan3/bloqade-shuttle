@@ -125,11 +125,9 @@ def rearrange(
     dst_x: ilist.IList[int, NumX],
     dst_y: ilist.IList[int, NumY],
 ):
-    if len(src_x) < 1 or len(dst_x) < 1:
-        return
+    if len(src_x) >= 1 and len(dst_x) >= 1:
+        x_tones = ilist.range(len(src_x))
+        y_tones = ilist.range(len(src_y))
 
-    x_tones = ilist.range(len(src_x))
-    y_tones = ilist.range(len(src_y))
-
-    device_fn = schedule.device_fn(rearrange_impl, x_tones, y_tones)
-    device_fn(src_x, src_y, dst_x, dst_y)
+        device_fn = schedule.device_fn(rearrange_impl, x_tones, y_tones)
+        device_fn(src_x, src_y, dst_x, dst_y)

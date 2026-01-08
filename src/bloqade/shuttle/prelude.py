@@ -1,5 +1,5 @@
 from bloqade.geometry.dialects import grid
-from bloqade.squin import op, qubit
+from bloqade.squin import gate as op, qubit
 from kirin import ir
 from kirin.dialects import debug, func, ilist
 from kirin.passes import Default, Fold, TypeInfer

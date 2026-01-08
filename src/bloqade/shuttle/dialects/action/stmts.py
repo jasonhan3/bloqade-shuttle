@@ -22,6 +22,15 @@ class TweezerFuncOpCallableInterface(CallableStmtInterface["TweezerFunction"]):
         assert isinstance(stmt, TweezerFunction)
         return stmt.body
 
+    @classmethod
+    def align_input_args(
+        cls, stmt: ir.Statement, *args: "CallableStmtInterface.ValueType", **kwargs: "CallableStmtInterface.ValueType"
+    ) -> tuple["CallableStmtInterface.ValueType", ...]:
+        assert isinstance(stmt, TweezerFunction)
+        if kwargs:
+            raise TypeError("TweezerFunction does not accept keyword arguments.")
+        return args
+
 
 @statement(dialect=dialect)
 class TweezerFunction(Statement):

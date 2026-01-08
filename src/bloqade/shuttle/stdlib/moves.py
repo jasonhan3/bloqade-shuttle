@@ -80,19 +80,33 @@ def default_move_cz_impl(
         qarg_x_ids (ilist.IList[int, NumX]): The x-indices of the ending positions.
         qarg_y_ids (ilist.IList[int, NumY]): The y-indices of the ending positions.
     """
-    if len(ctrl_x_ids) < 1 or len(qarg_x_ids) < 1:
-        return
+    if len(ctrl_x_ids) >= 1 and len(qarg_x_ids) >= 1:
+        fwd_kernel = schedule.device_fn(
+            single_zone_move_cz,
+            ilist.range(len(ctrl_x_ids)),
+            ilist.range(len(ctrl_y_ids)),
+        )
+        bwd_kernel = schedule.reverse(fwd_kernel)
 
-    fwd_kernel = schedule.device_fn(
-        single_zone_move_cz,
-        ilist.range(len(ctrl_x_ids)),
-        ilist.range(len(ctrl_y_ids)),
-    )
-    bwd_kernel = schedule.reverse(fwd_kernel)
-
-    fwd_kernel(zone, ctrl_x_ids, ctrl_y_ids, qarg_x_ids, qarg_y_ids, x_shift, y_shift)
-    gate.top_hat_cz(zone)
-    bwd_kernel(zone, qarg_x_ids, qarg_y_ids, ctrl_x_ids, ctrl_y_ids, x_shift, y_shift)
+        fwd_kernel(
+            zone,
+            ctrl_x_ids,
+            ctrl_y_ids,
+            qarg_x_ids,
+            qarg_y_ids,
+            x_shift,
+            y_shift,
+        )
+        gate.top_hat_cz(zone)
+        bwd_kernel(
+            zone,
+            qarg_x_ids,
+            qarg_y_ids,
+            ctrl_x_ids,
+            ctrl_y_ids,
+            x_shift,
+            y_shift,
+        )
 
 
 DEFAULT_X_SHIFT = 2.0
