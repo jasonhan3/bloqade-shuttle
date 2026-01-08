@@ -1,5 +1,6 @@
 from typing import cast
 
+from kirin import ir
 from kirin.analysis import const, forward
 from kirin.interp import MethodTable, impl
 
@@ -33,14 +34,23 @@ class ConstProp(MethodTable):
         else:
             return (const.Result.top(),)
 
-        inputs_results = frame.get_values(stmt.inputs)
+        inputs_results = list(frame.get_values(stmt.inputs))
 
         if not all(isinstance(input_, const.Value) for input_ in inputs_results):
             return (const.Result.top(),)
 
-        kwargs = stmt.kwargs
-        args = interp.permute_values(
-            device_task.move_fn.arg_names, inputs_results, kwargs
+        trait = device_task.move_fn.code.get_trait(ir.CallableStmtInterface)
+        if trait is None:
+            return (const.Result.top(),)
+        if stmt.kwargs:
+            kw_count = len(stmt.kwargs)
+            kw_values = inputs_results[-kw_count:]
+            inputs_results = inputs_results[:-kw_count]
+            kwargs = dict(zip(stmt.kwargs, kw_values))
+        else:
+            kwargs = {}
+        args = trait.align_input_args(
+            device_task.move_fn.code, *inputs_results, **kwargs
         )
 
         path = TraceInterpreter(stmt.arch_spec).run_trace(

@@ -6,7 +6,9 @@ from kirin.ir import (
     CallableStmtInterface,
     HasSignature,
     IsolatedFromAbove,
+    HasCFG,
     Region,
+    SSACFG,
     Statement,
     SymbolOpInterface,
 )
@@ -27,9 +29,10 @@ class TweezerFuncOpCallableInterface(CallableStmtInterface["TweezerFunction"]):
         cls, stmt: ir.Statement, *args: "CallableStmtInterface.ValueType", **kwargs: "CallableStmtInterface.ValueType"
     ) -> tuple["CallableStmtInterface.ValueType", ...]:
         assert isinstance(stmt, TweezerFunction)
+        values = list(args)
         if kwargs:
-            raise TypeError("TweezerFunction does not accept keyword arguments.")
-        return args
+            values.extend(kwargs[name] for name in kwargs)
+        return tuple(values)
 
 
 @statement(dialect=dialect)
@@ -40,6 +43,8 @@ class TweezerFunction(Statement):
             IsolatedFromAbove(),
             SymbolOpInterface(),
             HasSignature(),
+            HasCFG(),
+            SSACFG(),
             TweezerFuncOpCallableInterface(),
         }
     )

@@ -12,8 +12,9 @@ class RewriteDeviceCall(abc.RewriteRule):
         ):
             return abc.RewriteResult()
 
+        combined_inputs = node.inputs + node.kwargs
         (
-            path_gen := path.Gen(node.callee, node.inputs, kwargs=node.kwargs)
+            path_gen := path.Gen(node.callee, combined_inputs, kwargs=node.keys)
         ).insert_before(node)
 
         if not isinstance(node.parent_stmt, (schedule.Auto, schedule.Parallel)):
@@ -40,7 +41,13 @@ class RewriteAutoInvoke(abc.RewriteRule):
         (tweezer_task := schedule.NewTweezerTask(move_fn=callee_ssa)).insert_before(
             node
         )
-        (path.Gen(tweezer_task.result, node.inputs, kwargs=node.kwargs)).insert_before(
+        if isinstance(node, func.Call):
+            combined_inputs = node.inputs + node.kwargs
+            kwargs = node.keys
+        else:
+            combined_inputs = node.inputs
+            kwargs = ()
+        (path.Gen(tweezer_task.result, combined_inputs, kwargs=kwargs)).insert_before(
             node
         )
 

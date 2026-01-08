@@ -149,7 +149,7 @@ class TraceInterpreter(ArchSpecInterpreter):
 
         if not isinstance(mt.code, (action.TweezerFunction, func.Lambda)):
             raise ValueError("Method code must be a MoveFunction or Lambda")
-        self.run(mt, args=args, kwargs=kwargs)
+        self.run(mt, *args, **kwargs)
         return self.trace.copy()
 
 

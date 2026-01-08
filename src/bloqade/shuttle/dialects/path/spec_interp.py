@@ -1,3 +1,4 @@
+from kirin import ir
 from kirin.interp import (
     Frame,
     InterpreterError,
@@ -26,9 +27,18 @@ class SpecPathInterpreter(MethodTable):
         else:
             raise InterpreterError("Invalid device task type")
 
-        inputs = frame.get_values(stmt.inputs)
-        kwargs = stmt.kwargs
-        args = interp.permute_values(device_task.move_fn.arg_names, inputs, kwargs)
+        inputs = list(frame.get_values(stmt.inputs))
+        trait = device_task.move_fn.code.get_trait(ir.CallableStmtInterface)
+        if trait is None:
+            raise InterpreterError("Device function is not callable")
+        if stmt.kwargs:
+            kw_count = len(stmt.kwargs)
+            kw_values = inputs[-kw_count:]
+            inputs = inputs[:-kw_count]
+            kwargs = dict(zip(stmt.kwargs, kw_values))
+        else:
+            kwargs = {}
+        args = trait.align_input_args(device_task.move_fn.code, *inputs, **kwargs)
         path = TraceInterpreter(interp.arch_spec).run_trace(
             device_task.move_fn, args, {}
         )
