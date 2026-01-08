@@ -93,19 +93,24 @@ class TestActionMethods:
         interpreter.trace = [taskgen.WayPointsAction([self.start_pos])]
         return interpreter
 
+    def run_stmt(self, interpreter, stmt, values):
+        with interpreter.new_frame(stmt) as frame:
+            frame.set_values(stmt.args, values)
+            return interpreter.frame_eval(frame, stmt)
+
     def test_move_error(self):
         pos_ssa = ir.TestValue()
         pos = grid.Grid.from_positions([4, 5], [3, 4])
         interpreter = self.init_interpreter()
 
         with pytest.raises(interp.InterpreterError):
-            interpreter.run_stmt(action.Move(pos_ssa), (pos,))
+            self.run_stmt(interpreter, action.Move(pos_ssa), (pos,))
 
     def test_move(self):
         pos_ssa = ir.TestValue()
         pos = grid.Grid.from_positions([4, 5], [3, 4])
         interpreter = self.init_with_current_pos()
-        interpreter.run_stmt(action.Move(pos_ssa), (pos,))
+        self.run_stmt(interpreter, action.Move(pos_ssa), (pos,))
 
         assert interpreter.trace == [
             taskgen.WayPointsAction([self.start_pos, pos]),
@@ -115,7 +120,7 @@ class TestActionMethods:
         pos_ssa = ir.TestValue()
         pos = grid.Grid.from_positions([4, 5], [3, 4])
         interpreter = self.init_interpreter()
-        interpreter.run_stmt(action.Set(pos_ssa), (pos,))
+        self.run_stmt(interpreter, action.Set(pos_ssa), (pos,))
 
         assert interpreter.trace == [
             taskgen.WayPointsAction([pos]),
@@ -129,8 +134,9 @@ class TestActionMethods:
 
         interpreter = self.init_interpreter()
 
-        with pytest.raises(interp.InterpreterError):
-            interpreter.run_stmt(
+        with pytest.raises(NotImplementedError):
+            self.run_stmt(
+                interpreter,
                 action.TurnOn(x_slice_ssa, y_slice_ssa),
                 (x_tone_indices, y_tone_indices),
             )
@@ -143,8 +149,9 @@ class TestActionMethods:
 
         interpreter = self.init_interpreter()
 
-        with pytest.raises(interp.InterpreterError):
-            interpreter.run_stmt(
+        with pytest.raises(NotImplementedError):
+            self.run_stmt(
+                interpreter,
                 action.TurnOff(x_slice_ssa, y_slice_ssa),
                 (x_tone_indices, y_tone_indices),
             )
@@ -199,7 +206,8 @@ class TestActionMethods:
         y_slice_ssa = ir.TestValue()
 
         interpreter = self.init_with_current_pos()
-        interpreter.run_stmt(
+        self.run_stmt(
+            interpreter,
             StmtType(x_slice_ssa, y_slice_ssa),
             (x_tone_indices, y_tone_indices),
         )
@@ -225,12 +233,13 @@ def test_reverse_path():
 def test_interpreter_trace():
 
     @tweezer
-    def test_action(self):
+    def test_action():
         action.set_loc(grid.from_positions([1.0, 2.0], [3.0, 4.0]))
         action.turn_on(action.ALL, action.ALL)
         action.turn_off(action.ALL, action.ALL)
 
     interpreter = taskgen.TraceInterpreter(ArchSpec())
+    interpreter.initialize()
     assert interpreter.run_trace(test_action, (), {}) == [
         taskgen.WayPointsAction([grid.Grid.from_positions([1, 2], [3, 4])]),
         taskgen.TurnOnXYSliceAction(action.ALL, action.ALL),

@@ -25,7 +25,7 @@ def emit_kernel():
 
     @qourier.kernel
     def main():
-        qubits = squin.qubit.new(4)
+        qubits = squin.qalloc(4)
         atoms = qourier.atom.new(slm, qubits)
         ctrls, qargs = qourier.atom.move_next_to(gate_slots, atoms[0::2], atoms[1::2])
         qourier.gate.top_hat_cz(gate_slots)

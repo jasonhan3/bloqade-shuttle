@@ -17,10 +17,10 @@ def test_canonicalize_do_nothing():
         [
             sch.auto(
                 sch.parallel(
-                    func.Call(callee_1, (input_1,)),
-                    sch.auto(func.Call(callee_1, (input_1,))),
+                    func.Call(callee_1, (input_1,), kwargs=(), keys=()),
+                    sch.auto(func.Call(callee_1, (input_1,), kwargs=(), keys=())),
                 ),
-                sch.parallel(func.Call(callee_2, (input_2,))),
+                sch.parallel(func.Call(callee_2, (input_2,), kwargs=(), keys=())),
             )
         ]
     )
@@ -29,10 +29,10 @@ def test_canonicalize_do_nothing():
         [
             sch.auto(
                 sch.parallel(
-                    func.Call(callee_1, (input_1,)),
-                    sch.auto(func.Call(callee_1, (input_1,))),
+                    func.Call(callee_1, (input_1,), kwargs=(), keys=()),
+                    sch.auto(func.Call(callee_1, (input_1,), kwargs=(), keys=())),
                 ),
-                sch.parallel(func.Call(callee_2, (input_2,))),
+                sch.parallel(func.Call(callee_2, (input_2,), kwargs=(), keys=())),
             )
         ]
     )
@@ -53,11 +53,12 @@ def test_canonicalize_flatten_auto():
         [
             sch.auto(
                 sch.parallel(
-                    func.Call(callee_1, (input_1,)),
-                    sch.parallel(func.Call(callee_1, (input_1,))),
+                    func.Call(callee_1, (input_1,), kwargs=(), keys=()),
+                    sch.parallel(func.Call(callee_1, (input_1,), kwargs=(), keys=())),
                 ),
                 sch.auto(
-                    func.Call(callee_2, (input_2,)), func.Call(callee_1, (input_1,))
+                    func.Call(callee_2, (input_2,), kwargs=(), keys=()),
+                    func.Call(callee_1, (input_1,), kwargs=(), keys=()),
                 ),
             )
         ]
@@ -67,10 +68,11 @@ def test_canonicalize_flatten_auto():
         [
             sch.auto(
                 sch.parallel(
-                    func.Call(callee_1, (input_1,)), func.Call(callee_1, (input_1,))
+                    func.Call(callee_1, (input_1,), kwargs=(), keys=()),
+                    func.Call(callee_1, (input_1,), kwargs=(), keys=()),
                 ),
-                func.Call(callee_2, (input_2,)),
-                func.Call(callee_1, (input_1,)),
+                func.Call(callee_2, (input_2,), kwargs=(), keys=()),
+                func.Call(callee_1, (input_1,), kwargs=(), keys=()),
             )
         ]
     )

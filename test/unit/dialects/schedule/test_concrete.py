@@ -24,7 +24,9 @@ class TestScheduleInterpreter:
         interpreter = self.init_interpreter()
         ssa_values = tuple(ir.TestValue() for _ in values)
         new_stmt = stmt_type(*ssa_values)
-        return interpreter.run_stmt(new_stmt, values)
+        with interpreter.new_frame(new_stmt) as frame:
+            frame.set_values(new_stmt.args, values)
+            return interpreter.frame_eval(frame, new_stmt)
 
     def test_new_device_function(self):
 

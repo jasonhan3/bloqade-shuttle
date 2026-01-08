@@ -29,8 +29,10 @@ def test_if_1():
     @move
     def main():
         i = 0
+        result = None
         if i % 2 == 0:
-            return measure.measure((spec.get_static_trap(zone_id="test"),))
+            result = measure.measure((spec.get_static_trap(zone_id="test"),))
+        return result
 
     assert RuntimeAnalysis(move).has_quantum_runtime(main)
 
@@ -51,13 +53,12 @@ def test_if_3():
         i = 0
         start = spec.get_static_trap(zone_id="test")
         end = grid.shift(start, 1, 0)
+        result = 1
         if cond:
-            move_by_waypoints(ilist.IList([start, end]))
-            i = i + 1
-        else:
-            return 1
+            move_by_waypoints(ilist.IList([start, end]), True, True)
+            result = i + 1
 
-        return i
+        return result
 
     assert RuntimeAnalysis(move).has_quantum_runtime(main)
 
@@ -68,9 +69,11 @@ def test_if_4():
         i = 0
         if cond:
             gate.top_hat_cz(spec.get_static_trap(zone_id="test"))
-            return i + 2
+            result = i + 2
         else:
-            return i + 1
+            result = i + 1
+
+        return result
 
     assert RuntimeAnalysis(move).has_quantum_runtime(main)
 
@@ -81,11 +84,11 @@ def test_if_5():
         i = 0
         if cond:
             gate.top_hat_cz(spec.get_static_trap(zone_id="test"))
-            return i + 2
+            result = i + 2
         else:
-            i = i + 1
+            result = i + 1
 
-        return i
+        return result
 
     assert RuntimeAnalysis(move).has_quantum_runtime(main)
 
@@ -115,9 +118,12 @@ def test_loop_3():
     @move
     def main():
         i = 0
+        result = 0
         for i in range(0, 9, 2):
             gate.top_hat_cz(spec.get_static_trap(zone_id="test"))
-            return i
+            result = i
+
+        return result
 
     assert RuntimeAnalysis(move).has_quantum_runtime(main)
 

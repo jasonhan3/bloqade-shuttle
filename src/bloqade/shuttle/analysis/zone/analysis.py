@@ -20,6 +20,9 @@ class ZoneAnalysis(Forward[Zone]):
     lattice = Zone
     arch_spec: ArchSpec = field(default_factory=ArchSpec)
 
+    def method_self(self, method: ir.Method) -> Zone:
+        return self.lattice.bottom()
+
     def get_grid_lattice(self, zone: grid.Grid) -> Zone:
         zone_id = self.arch_spec.layout.get_zone_id(zone)
         if zone_id is not None:
@@ -39,6 +42,14 @@ class ZoneAnalysis(Forward[Zone]):
             for result in stmt.results
         )
 
+    def eval_fallback(
+        self, frame: ForwardFrame[Zone], node: ir.Statement
+    ) -> interp.StatementResult[Zone]:
+        return self.eval_stmt_fallback(frame, node)
+
     def run_method(self, method: ir.Method, args: tuple[Zone, ...]):
         # NOTE: we do not support dynamic calls here, thus no need to propagate method object
         return self.run_callable(method.code, (self.lattice.bottom(),) + args)
+
+    def run_analysis(self, method: ir.Method, *args: Zone, **kwargs: Zone):
+        return self.run(method, *args, **kwargs)

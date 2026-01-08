@@ -28,8 +28,16 @@ class RuntimeAnalysis(ForwardExtra[RuntimeFrame, EmptyLattice]):
     keys = ["runtime"]
     lattice = EmptyLattice
 
+    def method_self(self, method: ir.Method) -> EmptyLattice:
+        return self.lattice.bottom()
+
     def eval_stmt_fallback(self, frame: RuntimeFrame, stmt: ir.Statement):
         return tuple(self.lattice.top() for _ in stmt.results)
+
+    def eval_fallback(
+        self, frame: RuntimeFrame, node: ir.Statement
+    ) -> interp.StatementResult[EmptyLattice]:
+        return self.eval_stmt_fallback(frame, node)
 
     def initialize_frame(
         self, code: ir.Statement, *, has_parent_access: bool = False
@@ -37,7 +45,12 @@ class RuntimeAnalysis(ForwardExtra[RuntimeFrame, EmptyLattice]):
         return RuntimeFrame(code, has_parent_access=has_parent_access)
 
     def run_method(self, method: ir.Method, args: tuple[EmptyLattice, ...]):
-        return self.run_callable(method.code, (self.lattice.bottom(),) + args)
+        with self.new_frame(method.code) as frame:
+            result = self.frame_call(frame, method.code, self.lattice.bottom(), *args)
+            return frame, result
+
+    def run_analysis(self, method: ir.Method, *args: EmptyLattice, **kwargs: EmptyLattice):
+        return self.run(method, *args, **kwargs)
 
     def has_quantum_runtime(self, method: ir.Method) -> bool:
         """Return True if the method has quantum runtime operations, False otherwise."""
@@ -52,13 +65,13 @@ class Scf(interp.MethodTable):
     def ifelse(self, _interp: RuntimeAnalysis, frame: RuntimeFrame, stmt: scf.IfElse):
         # If either branch is quantum, the whole ifelse is quantum
         with _interp.new_frame(stmt, has_parent_access=True) as then_frame:
-            then_result = _interp.run_ssacfg_region(
-                then_frame, stmt.then_body, (_interp.lattice.top(),)
+            then_result = _interp.frame_call_region(
+                then_frame, stmt, stmt.then_body, _interp.lattice.top()
             )
 
         with _interp.new_frame(stmt, has_parent_access=True) as else_frame:
-            else_result = _interp.run_ssacfg_region(
-                else_frame, stmt.else_body, (_interp.lattice.top(),)
+            else_result = _interp.frame_call_region(
+                else_frame, stmt, stmt.else_body, _interp.lattice.top()
             )
 
         frame.is_quantum = (
@@ -82,8 +95,8 @@ class Scf(interp.MethodTable):
     def for_loop(self, _interp: RuntimeAnalysis, frame: RuntimeFrame, stmt: scf.For):
         args = (_interp.lattice.top(),) * (len(stmt.initializers) + 1)
         with _interp.new_frame(stmt, has_parent_access=True) as body_frame:
-            result = _interp.run_ssacfg_region(
-                body_frame, stmt.body, (_interp.lattice.bottom(),)
+            result = _interp.frame_call_region(
+                body_frame, stmt, stmt.body, *args
             )
 
         frame.is_quantum = frame.is_quantum or body_frame.is_quantum
@@ -122,7 +135,9 @@ class Func(interp.MethodTable):
         ):
             body = trait.get_callable_region(callee_result.code)
             with _interp.new_frame(stmt) as callee_frame:
-                result = _interp.run_ssacfg_region(callee_frame, body, args)
+                result = _interp.frame_call_region(
+                    callee_frame, callee_result.code, body, _interp.lattice.bottom(), *args
+                )
         else:
             raise InterruptedError("Dynamic method calls are not supported")
 

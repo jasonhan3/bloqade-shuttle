@@ -34,22 +34,19 @@ def test_inject_spac_callgraph():
     test_spec = get_spec(slm_grid)
 
     @move
+    def leaf():
+        return spec.get_static_trap(zone_id="slm")
+
+    @move
     def subroutine(depth: int):
-        slm = spec.get_static_trap(zone_id="slm")
-
+        result = leaf()
         if depth >= 1:
-
-            def lambda_func():
-                return slm
-
-            return lambda_func
-
-        return subroutine(depth + 1)
+            result = leaf()
+        return result
 
     @move
     def test():
-        res = subroutine(0)
-        return res()
+        return subroutine(0)
 
     inject_spec.InjectSpecsPass(move, arch_spec=test_spec, fold=False)(test)
 

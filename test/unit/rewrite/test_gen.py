@@ -21,6 +21,8 @@ def test_rewrite_to_device_call_with_play():
             func.Call(
                 callee=device_fn,
                 inputs=(input_1.result, input_2),
+                kwargs=(),
+                keys=(),
             ),
         ]
     )
@@ -33,6 +35,7 @@ def test_rewrite_to_device_call_with_play():
             gen_stmt := path.Gen(
                 device_fn,
                 inputs=(input_1.result, input_2),
+                kwargs=(),
             ),
             path.Play(gen_stmt.result),
         ]
@@ -57,6 +60,7 @@ def test_rewrite_to_device_call_without_play():
                     callee=device_fn,
                     inputs=(input_1.result, input_2),
                     kwargs=(),
+                    keys=(),
                 )
             ),
         ]
