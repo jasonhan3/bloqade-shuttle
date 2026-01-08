@@ -51,14 +51,19 @@ class MatplotlibRenderer(RendererInterface):
     sleeping: bool = field(default=True, init=False)
 
     def __post_init__(self) -> None:
-        fig = plt.gcf()
+        fig = self.ax.figure
         fig.subplots_adjust(bottom=0.2)
         continue_ax = fig.add_axes((0.01, 0.01, 0.1, 0.075))
         exit_ax = fig.add_axes((0.21, 0.01, 0.1, 0.075))
 
         self.continue_button = Button(continue_ax, "Continue")
         self.exit_button = Button(exit_ax, "Exit")
-        self.exit_button.on_clicked(lambda event: exit())
+        self.exit_button.on_clicked(self._on_exit)
+
+    def _on_exit(self, _event) -> None:
+        # Stop the pause loop and close the figure.
+        self.sleeping = False
+        plt.close(self.ax.figure)
 
     @property
     def fov_size(self) -> float:
@@ -277,7 +282,7 @@ class MatplotlibRenderer(RendererInterface):
         self.continue_button.on_clicked(lambda event: setattr(self, "sleeping", False))
 
         self.sleeping = True
-        while self.sleeping:
+        while self.sleeping and plt.fignum_exists(self.ax.figure.number):
             plt.pause(self.sleep_time)
 
     def clear_paths(self) -> None:
